@@ -1,0 +1,197 @@
+<script type="text/javascript">    
+    function showRange(){
+        var val = $('#node-input-action').val()
+        if(val === 'range'){
+            $('#node-row-start').show()
+            $('#node-row-end').show()
+            $('#node-input-rows').val('')
+            $('#node-row-rows').hide()
+        }
+        else if(val === 'all'){
+            $('#node-input-start').val('')
+            $('#node-input-end').val('')
+            $('#node-input-rows').val('')
+            $('#node-row-start').hide()
+            $('#node-row-end').hide()
+            $('#node-row-rows').hide()
+        }
+        else{
+            $('#node-input-start').val('')
+            $('#node-input-end').val('')
+            $('#node-row-start').hide()
+            $('#node-row-end').hide()
+            $('#node-row-rows').show()
+        }
+    }
+
+    RED.nodes.registerType('snowflakedw', {
+        category: 'storage',
+        defaults: {
+            name: {value:""},
+            comments: {value:""},
+            server: { value: "", type: "snowflake-server", required: false },
+            warehouse: {value:""},
+            database: {value:""},
+            schema: {value:""},
+            role: {value:""},
+            bind: {value:""},
+            sqlText: {value:""},
+            action: {value:""},
+            rows: {value:""},
+            start: {value:""},
+            end: {value:""}            
+        },
+        label: function () {
+            return this.name || "snowflake dw"
+        },
+        inputs: 1,
+        outputs: 1,        
+        color: 'lightblue',        
+        icon: 'db.png',
+        oneditprepare: function(){
+            showRange()
+        }
+    });
+</script>
+
+
+<script type="text/x-red" data-template-name="snowflakedw">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-list"></i> Name</label>
+        <input type="text" id="node-input-name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-comments"><i class="fa fa-commenting-o"></i> Comments</label>
+        <textarea id="node-input-comments" rows="3" style="width:70%;"></textarea>
+    </div>
+    <div class="form-row" style="margin-top:20px;">
+        <ul class="nav nav-tabs" >
+            <li class="nav-item active" style="width:100px">
+                <a class="nav-link" data-toggle="tab" href="#config">Config</a>
+            </li>
+            <li class="nav-item" style="width:100px">
+                <a class="nav-link" data-toggle="tab" href="#query">Query</a>
+            </li>
+            <li class="nav-item" style="width:100px" >
+                <a class="nav-link" data-toggle="tab" href="#results">Results</a>
+            </li>
+        </ul>
+        <div class="tab-content">
+            <div id="config" class="tab-pane active"><br>
+                <div class="form-row">
+                    <label for="node-input-server"><i class="fa fa-server"></i> Server</label>
+                    <input type="text" id="node-input-server" >
+                </div>
+                <div class="form-row">
+                    <label for="node-input-warehouse"><i class="fa fa-industry"></i> Warehouse</label>
+                    <input type="text" id="node-input-warehouse" >
+                </div>
+                <div class="form-row">
+                    <label for="node-input-database"><i class="fa fa-database"></i> Database</label>
+                    <input type="text" id="node-input-database" >
+                </div>
+                <div class="form-row">
+                    <label for="node-input-schema"><i class="fa fa-database"></i> Schema</label>
+                    <input type="text" id="node-input-schema" >
+                </div>
+                <div class="form-row">
+                    <label for="node-input-role"><i class="fa fa-user-secret"></i> Role</label>
+                    <input type="text" id="node-input-role">
+                </div>                
+            </div>
+            <div id="query" class="tab-pane fade">
+                <div class="form-row">
+                    <input type="checkbox" id="node-input-bind" style="width:auto">
+                    <label for="node-input-bind" style="width:80%;margin:20px 5px;"> Binds <code>msg.payload</code> array. Refer <a href="https://docs.snowflake.net/manuals/user-guide/nodejs-driver-use.html#binding-statement-parameters">snowflake Docs</a>
+                    </label>                    
+                </div>
+                <div class="form-row">
+                    <textarea id="node-input-sqlText" style="height:250px;width:80%"></textarea>
+                </div>
+            </div>
+            <div id="results" class="tab-pane fade"><br>
+                <div class="form-row">
+                    <p style="color:red;"><strong>Note:</strong> query returns <code>msg.results</code> as output.</p>
+                </div>
+                <div class="form-row">
+                    <label for="node-input-action"><i class="fa fa-hand-o-right"></i> Action</label>
+                    <select id="node-input-action" onchange='showRange()'>
+                        <option value="first">First 'n' Rows</option>
+                        <option value="last">Last 'n' Rows</option>
+                        <option value="range">Range of Rows</option>
+                        <option value="all">All Rows</option>
+                    </select>
+                </div>
+                <div class="form-row" id="node-row-rows">
+                    <label for="node-input-rows" style="width:40%"><i class="fa fa-list"></i> # of Rows to consume</label>
+                    <input type="text" id="node-input-rows" style="width:100px;">
+                </div>
+                <div class="form-row" id="node-row-start">
+                    <label for="node-input-start"><i class="fa fa-list"></i> Start</label>
+                    <input type="text" id="node-input-start" style="width:100px;">
+                </div>
+                <div class="form-row" id="node-row-end">
+                    <label for="node-input-end"><i class="fa fa-list"></i> End</label>
+                    <input type="text" id="node-input-end" style="width:100px;">
+                </div>
+            </div>
+        </div>
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="snowflakedw">
+    <p>Query snowflake data warehouse, bind <code>msg.payload</code> to the query and select range or all rows from <code>msg.results</code>.</p>
+    <h3>Inputs</h3>
+        <dl class="message-properties">
+            <dt>server: <span class="property-type">object</span></dt>
+            <dd><ul><code>server</code> is a JSON object has the following properties.
+                    <li>account: Snowflake account name</li>
+                    <li>username: Snowflake username</li>
+                    <li>password: Snowflake password</li>
+            </ul></dd>
+            <dd>
+                <code>msg.sever</code> = { "account":"< account name >", "username":"< username >", "password": "< password >"}
+            </dd>
+            <dt>warehouse: <span class="property-type">string</span></dt>
+            <dd>Snowflake warehouse to use</dd>
+            <dd><code>msg.warehouse</code> will override warehouse value of node.</dd>
+            <dt>database: <span class="property-type">string</span></dt>
+            <dd>Snowflake database to use</dd>
+            <dd><code>msg.database</code> will override database value of node.</dd>
+            <dt>schema: <span class="property-type">string</span></dt>
+            <dd>Snowflake schema to use</dd>
+            <dd><code>msg.schema</code> will override schema value of node.</dd>
+            <dt>role: <span class="property-type">string</span></dt>
+            <dd>Snowflake role to use</dd>
+            <dd><code>msg.role</code> will override role value of node.</dd>
+            <dt>bind: <span class="property-type">boolean</span></dt>
+            <dd>Binds the <code>msg.payload</code> to the query.</dd>
+            <dt>msg.payload: <span class="property-type">Array | Array of Arrays</span></dt>
+            <dd><ul><li>Array for single statement binding values.</li>
+            <li>Array of Arrays for looping the same statement with multiple values.</li></ul></dd>
+            <dt>sqlText: <span class="property-type">string</span></dt>
+            <dd>Query to execute.</dd>
+            <dd><code>msg.sqlText</code> will override sqlText value of node.(textarea in query tab.)</dd>
+            <dt>action: <span class="property-type">string</span></dt>
+            <dd>action is a string that accepts "first","last","range","all"</dd>
+            <dd><code>msg.action</code> will override action value of node.</dd>
+            <dt>noOfRows: <span class="property-type">string | integer</span></dt>
+            <dd>noOfRows to consume as <code>msg.results</code>. This is required when the action is either "first" or "last".</dd>
+            <dd><code>msg.noOfRows</code> will override # of Rows to consume value of node.</dd>
+            <dt>start: <span class="property-type">string | integer</span></dt>
+            <dd>Consume a row starts from</dd>
+            <dd><code>msg.start</code> will override start value of node.</dd>
+            <dt>end: <span class="property-type">string | integer</span></dt>
+            <dd>Consume a row ends at</dd>
+            <dd><code>msg.end</code> will override end value of node.</dd>
+        </dl>
+
+    <h3>Outputs</h3>
+        <dl class="message-properties">
+            <dt>msg.results: <span class="property-type">Array</span></dt>
+            <dd>Query output.</dd>
+            <dt>msg.error: <span class="property-type">object</span></dt>
+            <dd><code>msg.error</code> When the node has invalid connection detail or query execution exceptions.</dd>
+        </dl>
+
+ </script>
